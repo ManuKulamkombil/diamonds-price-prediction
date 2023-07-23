@@ -1,0 +1,198 @@
+---
+title: "Report on diamonds data analysis"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup}
+library(ggplot2)
+library(dplyr)
+library(readr)
+
+
+```
+
+```{r}
+source("./src/utils.R")
+```
+
+
+## Problem Statement
+
+Understand and analyse features that effect the price of the diamonds.
+
+
+
+## Data Ingestion
+
+This classic dataset contains the prices and other attributes of almost 54,000 diamonds. It's a great dataset for beginners learning to work with data analysis and visualization.
+
+Content
+price price in US dollars (\$326--\$18,823)
+
+carat weight of the diamond (0.2--5.01)
+
+cut quality of the cut (Fair, Good, Very Good, Premium, Ideal)
+
+color diamond colour, from J (worst) to D (best)
+
+clarity a measurement of how clear the diamond is (I1 (worst), SI2, SI1, VS2, VS1, VVS2, VVS1, IF (best))
+
+x length in mm (0--10.74)
+
+y width in mm (0--58.9)
+
+z depth in mm (0--31.8)
+
+depth total depth percentage = z / mean(x, y) = 2 * z / (x + y) (43--79)
+
+table width of top of diamond relative to widest point (43--95)
+
+```{r}
+
+diamonds <- read_csv("data/raw/diamonds.csv", 
+    col_types = cols(...1 = col_skip()))
+```
+
+## Data Preprocessing
+
+```{r}
+diamonds <- diamonds %>%
+  mutate_at(vars(cut, color, clarity),
+            factor)
+```
+
+
+## Exploratory Data Analysis
+
+### Basic statistics
+
+```{r}
+summary(diamonds)
+```
+
+```{r}
+str(diamonds)
+```
+
+
+### `price`
+
+```{r}
+ggplot(diamonds) +
+  geom_histogram(aes(x = log10(price)))
+```
+
+
+### Continuous vs target `price`
+
+#### `carat` vs `price`
+
+```{r}
+tempdf <- diamonds %>%
+  filter(carat < 3) %>%
+  mutate(carat = log10(carat),
+         price = log1p(price))
+subplot_cont_cont_vars(df = tempdf,
+                       predictor_var = "carat",
+                       target_var = "price")
+
+
+
+```
+
+#### `depth` vs `price`
+
+```{r}
+
+tempdf <- diamonds %>%
+  filter(depth > 55 & depth < 70) %>%
+  mutate(price = log1p(price))
+subplot_cont_cont_vars(df = tempdf,
+                       predictor_var = "depth",
+                       target_var = "price")
+
+```
+
+
+
+#### `table` vs `price`
+
+```{r}
+tempdf <- diamonds %>%
+  filter(table > 50 & table < 70)
+subplot_cont_cont_vars(df = tempdf,
+                       predictor_var = "table",
+                       target_var = "price")
+
+```
+
+
+#### `x` vs `price`
+
+```{r}
+tempdf <- diamonds %>%
+  filter(table > 50 & depth < 70)
+subplot_cont_cont_vars(df = diamonds,
+                       predictor_var = "x",
+                       target_var = "price")
+
+```
+
+### Discrete vs target var `price`
+
+#### `Cut` vs `price`
+
+```{r fig.width=10}
+subplot_disc_cont_vars(df= diamonds,
+                       predictor_var = "cut",
+                                   target_var = "price")
+```
+
+#### `Color` vs `price`
+
+```{r }
+subplot_disc_cont_vars(df= diamonds,
+                       predictor_var = "color",
+                                   target_var = "price")
+```
+
+
+
+#### `clarity` vs `price`
+
+```{r }
+subplot_disc_cont_vars(df= diamonds,
+                       predictor_var = "clarity",
+                                   target_var = "price")
+```
+
+
+### More data processing
+
+```{r}
+diamonds_final <- diamonds %>%
+  filter(table > 50 & table < 70) %>%
+  filter(depth > 55 & depth < 70) %>%
+  filter(carat <3) %>%
+  mutate(price = log1p(price),
+         carat = log10(carat)) %>%
+  select(price, carat
+         , x, cut, color, clarity)
+
+
+```
+
+
+### ML Modelling
+
+```{r}
+lm_model <- lm(price ~ ., data = diamonds_final)
+
+summary(lm_model)
+```
+
+
+
+
