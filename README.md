@@ -1,4 +1,4 @@
 # diamonds-price-prediction
 Data science workshop for Pondicherry University students.
 
-Working on dev branch.
+Final report available at: https://manukulamkombil.github.io/diamonds-price-prediction/report.nb.html 
